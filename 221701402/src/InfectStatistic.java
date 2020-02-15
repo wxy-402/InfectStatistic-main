@@ -3,7 +3,7 @@
  * TODO
  *
  * @author wxy-402
- * @version 1.0
+ * @version
  * @since
  */
 import java.io.*;
@@ -11,6 +11,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class InfectStatistic {
 
@@ -38,6 +40,9 @@ class InfectStatistic {
             this.sp = sp;
             this.cure = cure;
             this.dead = dead;
+        }
+        public static province init(){//初始化province类
+            return new province(null,0,0,0,0);
         }
         public String getName(){
             return name;
@@ -84,9 +89,6 @@ class InfectStatistic {
         public String printDead(){
             return " 死亡"+dead+"人";
         }
-    }
-    public static province init(){//初始化province类
-        return new province(null,0,0,0,0);
     }
     /**
      * 解析命令行参数
@@ -261,8 +263,11 @@ class InfectStatistic {
         InfectFileManager() {}
 
         public void init() {
+            ArrayList<province> result = new ArrayList<>();//完整的省份列表
             String content = readLog(log_path,date);//读取文件夹下的文件
-            System.out.println(content);
+            result = match(content);
+            // System.out.println("\n");
+
         }
 
         public String readLog(String filePath, String date) {
@@ -299,7 +304,41 @@ class InfectStatistic {
             return false;
         }
 
+        public ArrayList<province> match(String content){
+            ArrayList<province> result = new ArrayList<>();
+            int count = 0;
+            String pattern1 = "(\\S+) 新增 感染患者 (\\d+)人";
+            String pattern2 = "(\\S+) 新增 疑似患者 (\\d+)人";
+            String pattern3 = "(\\S+) 感染患者 流入 (\\S+) (\\d+)人";
+            String pattern4 = "(\\S+) 疑似患者 流入 (\\S+) (\\d+人)";
+            String pattern5 = "(\\S+) 死亡 (\\d+)人";
+            String pattern6 = "(\\S+) 治愈 (\\d+)人";
+            String pattern7 = "(\\S+) 疑似患者 确诊感染 (\\d+)人";
+            String pattern8 = "(\\S+) 排除 疑似患者 (\\d+)人";
+            try{
+                BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
+                String line="";
+                line = br.readLine();
+                while ((line = br.readLine()) != null) {
+                    Matcher matcher1 = Pattern.compile(pattern1).matcher(line);
+                    Matcher matcher2 = Pattern.compile(pattern2).matcher(line);
+                    Matcher matcher3 = Pattern.compile(pattern3).matcher(line);
+                    Matcher matcher4 = Pattern.compile(pattern4).matcher(line);
+                    Matcher matcher5 = Pattern.compile(pattern5).matcher(line);
+                    Matcher matcher6 = Pattern.compile(pattern6).matcher(line);
+                    Matcher matcher7 = Pattern.compile(pattern7).matcher(line);
+                    Matcher matcher8 = Pattern.compile(pattern8).matcher(line);
+                    while(matcher1.find()) {
+                        count++;
 
+                    }
+                }
+                System.out.println(count);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            return result;
+        }
     }
     public static void main(String[] args) {
         if (args.length == 0) {
