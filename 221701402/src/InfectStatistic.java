@@ -41,9 +41,6 @@ class InfectStatistic {
             this.cure = cure;
             this.dead = dead;
         }
-        public static province init(){//初始化province类
-            return new province(null,0,0,0,0);
-        }
         public String getName(){
             return name;
         }
@@ -267,7 +264,9 @@ class InfectStatistic {
             String content = readLog(log_path,date);//读取文件夹下的文件
             result = match(content);
             // System.out.println("\n");
-
+            for(int i = 0; i < result.size(); i++){
+            	System.out.println(result.get(i).getName());
+            }
         }
 
         public String readLog(String filePath, String date) {
@@ -306,7 +305,6 @@ class InfectStatistic {
 
         public ArrayList<province> match(String content){
             ArrayList<province> result = new ArrayList<>();
-            int count = 0;
             String pattern1 = "(\\S+) 新增 感染患者 (\\d+)人";
             String pattern2 = "(\\S+) 新增 疑似患者 (\\d+)人";
             String pattern3 = "(\\S+) 感染患者 流入 (\\S+) (\\d+)人";
@@ -329,16 +327,71 @@ class InfectStatistic {
                     Matcher matcher7 = Pattern.compile(pattern7).matcher(line);
                     Matcher matcher8 = Pattern.compile(pattern8).matcher(line);
                     while(matcher1.find()) {
-                        count++;
+                        result = addIP(result, matcher1);
+                    }
+                    while(matcher2.find()) {
+                        result = addSP(result, matcher2);
+                    }
+                    while(matcher3.find()) {
+
+                    }
+                    while(matcher4.find()) {
+
+                    }
+                    while(matcher5.find()) {
+
+
+                    }
+                    while(matcher6.find()) {
+
+
+                    }
+                    while(matcher7.find()) {
+
+
+                    }
+                    while(matcher8.find()) {
+
 
                     }
                 }
-                System.out.println(count);
+
             }catch (Exception e){
                 e.printStackTrace();
             }
             return result;
         }
+
+        private ArrayList<province> addIP(ArrayList<province> result, Matcher matcher) {
+            boolean b = false;
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    b = true;
+                    result.get(i).setIp(Integer.parseInt(matcher.group(2)) + result.get(i).getIp());
+                }
+            }
+            if(!b) {//省份不存在
+                province p =new province(matcher.group(1), Integer.parseInt(matcher.group(2)), 0, 0, 0);
+                result.add(p);
+            }
+            return result;
+        }
+
+        private ArrayList<province> addSP(ArrayList<province> result, Matcher matcher) {
+            boolean b = false;
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    b = true;
+                    result.get(i).setIp(Integer.parseInt(matcher.group(2)) + result.get(i).getSp());
+                }
+            }
+            if(!b) {//省份不存在
+                province p =new province(matcher.group(1), 0, Integer.parseInt(matcher.group(2)), 0, 0);
+                result.add(p);
+            }
+            return result;
+        }
+
     }
     public static void main(String[] args) {
         if (args.length == 0) {
