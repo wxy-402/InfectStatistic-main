@@ -25,6 +25,69 @@ class InfectStatistic {
             "广东", "广西", "贵州", "海南", "河北", "河南", "黑龙江", "湖北", "湖南", "吉林",
             "江苏", "江西", "辽宁", "内蒙古", "宁夏", "青海", "山东", "山西", "陕西", "上海",
             "四川", "台湾", "天津", "西藏", "香港", "新疆", "云南", "浙江"};
+
+    static class province{
+        private String name;
+        private int ip;//感染
+        private int sp;//疑似
+        private int cure;//治愈
+        private int dead;//死亡
+        province(String name, int ip, int sp, int cure, int dead){
+            this.name = name;
+            this.ip = ip;
+            this.sp = sp;
+            this.cure = cure;
+            this.dead = dead;
+        }
+        public String getName(){
+            return name;
+        }
+        public int getIp(){
+            return ip;
+        }
+        public int getSp(){
+            return sp;
+        }
+        public int getCure(){
+            return cure;
+        }
+        public int getDead() {
+            return dead;
+        }
+        public void setName(String name) {
+            this.name = name;
+        }
+        public void setIp(int ip) {
+            this.ip = ip;
+        }
+        public void setSp(int sp) {
+            this.sp = sp;
+        }
+        public void setCure(int cure) {
+            this.cure = cure;
+        }
+        public void setDead(int dead) {
+            this.dead = dead;
+        }
+        public String printResult(){
+            return name+" 感染患者"+ip+"人"+" 疑似患者"+sp+"人"+ " 治愈"+cure+"人"+" 死亡"+dead+"人";
+        }
+        public String printIp(){
+            return " 感染患者"+ip+"人";
+        }
+        public String printSp(){
+            return " 疑似患者"+sp+"人";
+        }
+        public String printCure(){
+            return " 治愈"+cure+"人";
+        }
+        public String printDead(){
+            return " 死亡"+dead+"人";
+        }
+    }
+    public static province init(){//初始化province类
+        return new province(null,0,0,0,0);
+    }
     /**
      * 解析命令行参数
      */
@@ -83,7 +146,7 @@ class InfectStatistic {
                         return false;
                     }
                 } else {
-                    System.out.println("命令行格式有误——输入非以上参数错误");
+                    System.out.println("错误：未知参数");
                     return false;
                 }
             }
@@ -133,7 +196,10 @@ class InfectStatistic {
         public int getDate(int i) {
             i++;
             if(i < args.length) {
-                date = args[i];
+                if(date.compareTo(args[i]) >= 0)
+                    date = args[i];
+                else
+                    return -1;
             } else
                 return -1;
             return i;
@@ -191,33 +257,51 @@ class InfectStatistic {
         }
     }
 
-    public void readLog(String filePath) {
-        try {
-            File file = new File(filePath);
-            File[] files = file.listFiles();
-            Arrays.sort(files);
-            for (int i = 0; i < files.length; i++) {
-                if (files[i].isFile()){
-                    InputStreamReader reader = new InputStreamReader(new FileInputStream(files[i]));
-                    BufferedReader br = new BufferedReader(reader);
-                    String line="";
-                    line = br.readLine();
-                    while (line != null){
-                        System.out.println(files[i].getName()+": "+line);
-                        line = br.readLine();
-                    }
-                    br.close();
-                }
-            }
+    class InfectFileManager {
+        InfectFileManager() {}
 
-        }catch (Exception e) {
-            e.printStackTrace();
+        public void init() {
+            String content = readLog(log_path,date);//读取文件夹下的文件
+            System.out.println(content);
         }
+
+        public String readLog(String filePath, String date) {
+            try {
+                File file = new File(filePath);
+                File[] files = file.listFiles();
+                StringBuilder content = new StringBuilder();
+                Arrays.sort(files);
+                for (int i = 0; i < files.length; i++) {
+                    if (files[i].isFile() && isearly(files[i].getName(),date)){
+                        InputStreamReader reader = new InputStreamReader(new FileInputStream(files[i]));
+                        BufferedReader br = new BufferedReader(reader);
+                        String line="";
+                        line = br.readLine();
+                        while (line != null && !line.startsWith("//")){
+                            content.append(System.lineSeparator() + line);
+                            line = br.readLine();
+                        }
+                        br.close();
+                    }
+                }
+                return content.toString();
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        private boolean isearly(String filename, String date) {
+            date += ".log.txt";
+            if (filename.compareTo(date) <= 0) { //如果该文件的日期小于指定日期
+                return true;
+            }
+            return false;
+        }
+
 
     }
     public static void main(String[] args) {
-        //String path = "D:/gihub/InfectStatistic/221701402/log";
-        //readLog(path);
         if (args.length == 0) {
             System.out.println("错误：未输入参数");
             return;
@@ -227,7 +311,8 @@ class InfectStatistic {
         if(!cmdargs.checkCmd()) {
             return;
         }
-        System.out.println(infectStatistic.province_list);
+        InfectStatistic.InfectFileManager filemanager= infectStatistic.new InfectFileManager();
+        filemanager.init();
     }
 
 }
