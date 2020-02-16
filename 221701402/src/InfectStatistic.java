@@ -24,7 +24,7 @@ class InfectStatistic {
     SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
     Date d = new Date(System.currentTimeMillis());
     public String date = formatter.format(d);
-    public ArrayList<String> type_list = new ArrayList<>();
+    public static ArrayList<String> type_list = new ArrayList<>();
     public ArrayList<String> province_list = new ArrayList<>();
     public static String[] province_str = {"全国", "安徽", "澳门" ,"北京", "重庆", "福建","甘肃",
             "广东", "广西", "贵州", "海南", "河北", "河南", "黑龙江", "湖北", "湖南", "吉林",
@@ -75,7 +75,27 @@ class InfectStatistic {
             this.dead = dead;
         }
         public String printResult(){
-            return name+" 感染患者"+ip+"人"+" 疑似患者"+sp+"人"+ " 治愈"+cure+"人"+" 死亡"+dead+"人";
+            String result = name;
+            if(type_list != null && !type_list.isEmpty()) {//type有参数
+                for(int i = 0; i < type_list.size(); i++) {
+                    if(type_list.get(i).equals("ip")) {
+                        result += " 感染患者"+ip+"人";
+                    }
+                    if(type_list.get(i).equals("sp")) {
+                        result += " 疑似患者"+sp+"人";
+                    }
+                    if(type_list.get(i).equals("cure")) {
+                        result += " 治愈"+cure+"人";
+                    }
+                    if(type_list.get(i).equals("dead")) {
+                        result += " 死亡"+dead+"人";
+                    }
+                }
+            }
+            else {
+                result += " 感染患者"+ip+"人"+" 疑似患者"+sp+"人"+ " 治愈"+cure+"人"+" 死亡"+dead+"人";
+            }
+            return result;
         }
         public String printIp(){
             return " 感染患者"+ip+"人";
@@ -282,12 +302,7 @@ class InfectStatistic {
             }*/
             HashMap<Integer, province> result_map = new HashMap<>();
             result_map = sort(result);
-            Set<Entry<Integer, province>> entries =result_map.entrySet();
-            for(Entry<Integer, province> entry:entries ){
-                System.out.println(entry.getKey());
-                System.out.println(entry.getValue().printResult());
-            }
-            //outResult(result_map, type_list, province_list);
+            outResult(result_map, province_list, out_path);
         }
 
         public String readLog(String filePath, String date) {
@@ -540,9 +555,45 @@ class InfectStatistic {
             return result_map;
         }
 
-        private void outResult(HashMap<Integer, province> result_map, ArrayList<String> type_list,
-                               ArrayList<String> province_list) {
+        private void outResult(HashMap<Integer, province> result_map, ArrayList<String> province_list, String out_path) {
+            try {
+                initFile(out_path);
+                FileWriter fw = new FileWriter(out_path, true);
+                BufferedWriter bw = new BufferedWriter(fw);
+                if(province_list != null && !province_list.isEmpty()) {//province有参数值
+                    Set<Entry<Integer, province>> entries =result_map.entrySet();
+                    for(Entry<Integer, province> entry:entries){
+                        if(province_list.contains(province_str[entry.getKey()])) {
+                            bw.write(entry.getValue().printResult());
+                            bw.write("\n");
+                        }
+                    }
+                }
+                else
+                {
+                    Set<Entry<Integer, province>> entries =result_map.entrySet();
+                    for(Entry<Integer, province> entry:entries ){
+                        bw.write(entry.getValue().printResult());
+                        bw.write("\n");
+                    }
+                }
+                bw.write("// 该文档并非真实数据，仅供测试使用");
+                bw.close();
+                fw.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
+        private void initFile(String file_name) {
+            try {
+                FileWriter fw = new FileWriter(file_name);
+                fw.write("");//清空原文件内容
+                fw.flush();
+                fw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
     public static void main(String[] args) {
