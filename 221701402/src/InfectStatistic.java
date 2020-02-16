@@ -11,6 +11,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,8 +90,14 @@ class InfectStatistic {
             return " 死亡"+dead+"人";
         }
         public int getPosition() {
-            int positon = Arrays.binarySearch(province_str, name);
-            return positon;
+            int position = 0;
+            for(int i  = 0; i < province_str.length; i++) {
+                if(province_str[i].equals(name)) {
+                    position = i;
+                    break;
+                }
+            }
+            return position;
         }
     }
     /**
@@ -268,9 +277,17 @@ class InfectStatistic {
             String content = readLog(log_path,date);//读取文件夹下的文件
             result = match(content);
             // System.out.println("\n");
-            for(int i = 0; i < result.size(); i++){
-                System.out.println(result.get(i).printResult());
+            /*for(int i = 0; i < result.size(); i++){
+            	System.out.println(result.get(i).printResult());
+            }*/
+            HashMap<Integer, province> result_map = new HashMap<>();
+            result_map = sort(result);
+            Set<Entry<Integer, province>> entries =result_map.entrySet();
+            for(Entry<Integer, province> entry:entries ){
+                System.out.println(entry.getKey());
+                System.out.println(entry.getValue().printResult());
             }
+            //outResult(result_map, type_list, province_list);
         }
 
         public String readLog(String filePath, String date) {
@@ -505,6 +522,27 @@ class InfectStatistic {
                 System.out.println("确诊疑似省份" + matcher.group(1) + "不存在疑似患者，数据有误");
             }
             return result;
+        }
+
+        private HashMap<Integer, province> sort(ArrayList<province> result) {
+            HashMap<Integer, province> result_map = new HashMap<>();
+            int country_ip, country_sp, country_cure, country_dead;
+            country_ip = country_sp = country_cure = country_dead = 0;
+            for(int i = 0; i < result.size(); i++) {
+                country_ip += result.get(i).getIp();
+                country_sp += result.get(i).getSp();
+                country_cure += result.get(i).getCure();
+                country_dead += result.get(i).getDead();
+                result_map.put(result.get(i).getPosition(), result.get(i));
+            }
+            province country = new province("全国", country_ip, country_sp, country_cure, country_dead);
+            result_map.put(0, country);
+            return result_map;
+        }
+
+        private void outResult(HashMap<Integer, province> result_map, ArrayList<String> type_list,
+                               ArrayList<String> province_list) {
+
         }
     }
     public static void main(String[] args) {
