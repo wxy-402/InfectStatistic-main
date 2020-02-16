@@ -23,7 +23,7 @@ class InfectStatistic {
     public String date = formatter.format(d);
     public ArrayList<String> type_list = new ArrayList<>();
     public ArrayList<String> province_list = new ArrayList<>();
-    public String[] province_str = {"全国", "安徽", "澳门" ,"北京", "重庆", "福建","甘肃",
+    public static String[] province_str = {"全国", "安徽", "澳门" ,"北京", "重庆", "福建","甘肃",
             "广东", "广西", "贵州", "海南", "河北", "河南", "黑龙江", "湖北", "湖南", "吉林",
             "江苏", "江西", "辽宁", "内蒙古", "宁夏", "青海", "山东", "山西", "陕西", "上海",
             "四川", "台湾", "天津", "西藏", "香港", "新疆", "云南", "浙江"};
@@ -85,6 +85,10 @@ class InfectStatistic {
         }
         public String printDead(){
             return " 死亡"+dead+"人";
+        }
+        public int getPosition() {
+            int positon = Arrays.binarySearch(province_str, name);
+            return positon;
         }
     }
     /**
@@ -265,7 +269,7 @@ class InfectStatistic {
             result = match(content);
             // System.out.println("\n");
             for(int i = 0; i < result.size(); i++){
-            	System.out.println(result.get(i).getName());
+                System.out.println(result.get(i).printResult());
             }
         }
 
@@ -303,19 +307,19 @@ class InfectStatistic {
             return false;
         }
 
-        public ArrayList<province> match(String content){
+        public ArrayList<province> match(String content) {
             ArrayList<province> result = new ArrayList<>();
             String pattern1 = "(\\S+) 新增 感染患者 (\\d+)人";
             String pattern2 = "(\\S+) 新增 疑似患者 (\\d+)人";
             String pattern3 = "(\\S+) 感染患者 流入 (\\S+) (\\d+)人";
-            String pattern4 = "(\\S+) 疑似患者 流入 (\\S+) (\\d+人)";
+            String pattern4 = "(\\S+) 疑似患者 流入 (\\S+) (\\d+)人";
             String pattern5 = "(\\S+) 死亡 (\\d+)人";
             String pattern6 = "(\\S+) 治愈 (\\d+)人";
             String pattern7 = "(\\S+) 疑似患者 确诊感染 (\\d+)人";
             String pattern8 = "(\\S+) 排除 疑似患者 (\\d+)人";
-            try{
+            try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
-                String line="";
+                String line = "";
                 line = br.readLine();
                 while ((line = br.readLine()) != null) {
                     Matcher matcher1 = Pattern.compile(pattern1).matcher(line);
@@ -326,43 +330,39 @@ class InfectStatistic {
                     Matcher matcher6 = Pattern.compile(pattern6).matcher(line);
                     Matcher matcher7 = Pattern.compile(pattern7).matcher(line);
                     Matcher matcher8 = Pattern.compile(pattern8).matcher(line);
-                    while(matcher1.find()) {
-                        result = addIP(result, matcher1);
+                    while (matcher1.find()) {
+                        result = addIp(result, matcher1);
                     }
-                    while(matcher2.find()) {
-                        result = addSP(result, matcher2);
+                    while (matcher2.find()) {
+                        result = addSp(result, matcher2);
                     }
-                    while(matcher3.find()) {
-
+                    while (matcher3.find()) {
+                        result = moveIp(result, matcher3);
                     }
-                    while(matcher4.find()) {
-
+                    while (matcher4.find()) {
+                        result = moveSp(result, matcher4);
                     }
-                    while(matcher5.find()) {
-
-
+                    while (matcher5.find()) {
+                        result = addDead(result, matcher5);
                     }
-                    while(matcher6.find()) {
-
-
+                    while (matcher6.find()) {
+                        result = addCure(result, matcher6);
                     }
-                    while(matcher7.find()) {
-
-
+                    while (matcher7.find()) {
+                        result = diagnosisSp(result, matcher7);
                     }
-                    while(matcher8.find()) {
-
-
+                    while (matcher8.find()) {
+                        result = excludeSp(result, matcher8);
                     }
                 }
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return result;
         }
 
-        private ArrayList<province> addIP(ArrayList<province> result, Matcher matcher) {
+        private ArrayList<province> addIp(ArrayList<province> result, Matcher matcher) {
             boolean b = false;
             for(int i = 0; i < result.size(); i++){
                 if(result.get(i).getName().equals(matcher.group(1))){
@@ -377,12 +377,12 @@ class InfectStatistic {
             return result;
         }
 
-        private ArrayList<province> addSP(ArrayList<province> result, Matcher matcher) {
+        private ArrayList<province> addSp(ArrayList<province> result, Matcher matcher) {
             boolean b = false;
             for(int i = 0; i < result.size(); i++){
                 if(result.get(i).getName().equals(matcher.group(1))){
                     b = true;
-                    result.get(i).setIp(Integer.parseInt(matcher.group(2)) + result.get(i).getSp());
+                    result.get(i).setSp(Integer.parseInt(matcher.group(2)) + result.get(i).getSp());
                 }
             }
             if(!b) {//省份不存在
@@ -392,6 +392,120 @@ class InfectStatistic {
             return result;
         }
 
+        private ArrayList<province> moveIp(ArrayList<province> result, Matcher matcher) {
+            int out = -1;//流出省
+            int in = -1;//流入省
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    out = i;
+                }
+                if(result.get(i).getName().equals(matcher.group(2))){
+                    in = i;
+                }
+            }
+            if(out == -1) {//流出省份不存在
+                System.out.println("流出省份" + matcher.group(1) + "不存在感染患者，数据有误");
+            }
+            else {
+                if(in == -1) {//流入省份不存在
+                    province p =new province(matcher.group(2), Integer.parseInt(matcher.group(3)), 0, 0, 0);
+                    result.add(p);
+                    result.get(out).setIp(result.get(out).getIp() - Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
+                }
+                else {
+                    result.get(in).setIp(result.get(in).getIp() + Integer.parseInt(matcher.group(3)));//修改流入省的感染患者人数
+                    result.get(out).setIp(result.get(out).getIp() - Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
+                }
+            }
+            return result;
+        }
+
+        private ArrayList<province> moveSp(ArrayList<province> result, Matcher matcher) {
+            int out = -1;//流出省
+            int in = -1;//流入省
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    out = i;
+                }
+                if(result.get(i).getName().equals(matcher.group(2))){
+                    in = i;
+                }
+            }
+            if(out == -1) {//流出省份不存在
+                System.out.println("流出省份" + matcher.group(1) + "不存在疑似患者，数据有误");
+            }
+            else {
+                if(in == -1) {//流入省份不存在
+                    province p =new province(matcher.group(2), 0, Integer.parseInt(matcher.group(3)), 0, 0);
+                    result.add(p);
+                    result.get(out).setSp(result.get(out).getSp() - Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
+                }
+                else {
+                    result.get(in).setSp(result.get(in).getSp() + Integer.parseInt(matcher.group(3)));//修改流入省的感染患者人数
+                    result.get(out).setSp(result.get(out).getSp() - Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
+                }
+            }
+            return result;
+        }
+
+        private ArrayList<province> addDead(ArrayList<province> result, Matcher matcher) {
+            boolean b = false;
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    b = true;
+                    result.get(i).setIp(result.get(i).getIp() - Integer.parseInt(matcher.group(2)));//修改该省份的感染患者人数
+                    result.get(i).setDead(Integer.parseInt(matcher.group(2)) + result.get(i).getDead());//修改该省份的死亡人数
+                }
+            }
+            if(!b) {//省份不存在
+                System.out.println("死亡省份" + matcher.group(1) + "不存在感染患者，数据有误");
+            }
+            return result;
+        }
+
+        private ArrayList<province> addCure(ArrayList<province> result, Matcher matcher) {
+            boolean b = false;
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    b = true;
+                    result.get(i).setIp(result.get(i).getIp() - Integer.parseInt(matcher.group(2)));//修改该省份的感染患者人数
+                    result.get(i).setCure(Integer.parseInt(matcher.group(2)) + result.get(i).getCure());//修改该省份的治愈人数
+                }
+            }
+            if(!b) {//省份不存在
+                System.out.println("治愈省份" + matcher.group(1) + "不存在感染患者，数据有误");
+            }
+            return result;
+        }
+
+        private ArrayList<province> diagnosisSp(ArrayList<province> result, Matcher matcher) {
+            boolean b = false;
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    b = true;
+                    result.get(i).setIp(Integer.parseInt(matcher.group(2)) + result.get(i).getIp());//修改该省份的感染患者人数
+                    result.get(i).setSp(result.get(i).getSp() - Integer.parseInt(matcher.group(2)));//修改该省份的疑似患者人数
+                }
+            }
+            if(!b) {//省份不存在
+                System.out.println("确诊疑似省份" + matcher.group(1) + "不存在疑似患者，数据有误");
+            }
+            return result;
+        }
+
+        private ArrayList<province> excludeSp(ArrayList<province> result, Matcher matcher) {
+            boolean b = false;
+            for(int i = 0; i < result.size(); i++){
+                if(result.get(i).getName().equals(matcher.group(1))){
+                    b = true;
+                    result.get(i).setSp(result.get(i).getSp() - Integer.parseInt(matcher.group(2)));//修改该省份的疑似患者人数
+                }
+            }
+            if(!b) {//省份不存在
+                System.out.println("确诊疑似省份" + matcher.group(1) + "不存在疑似患者，数据有误");
+            }
+            return result;
+        }
     }
     public static void main(String[] args) {
         if (args.length == 0) {
