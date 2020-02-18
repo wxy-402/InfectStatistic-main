@@ -33,7 +33,7 @@ class InfectStatistic {
     /**
      * 存储省份信息
      */
-    static class province{
+    static class Province{
         private String name;//省份名称
         private int ip;//感染
         private int sp;//疑似
@@ -47,7 +47,7 @@ class InfectStatistic {
          * @param cure 治愈
          * @param dead 死亡
          */
-        province(String name, int ip, int sp, int cure, int dead){
+        Province(String name, int ip, int sp, int cure, int dead){
             this.name = name;
             this.ip = ip;
             this.sp = sp;
@@ -136,7 +136,9 @@ class InfectStatistic {
                 }
             }
             else {//type没有参数
-                result.append(" 感染患者").append(ip).append("人").append(" 疑似患者").append(sp).append("人").append(" 治愈").append(cure).append("人").append(" 死亡").append(dead).append("人");
+                result.append(" 感染患者").append(ip).append("人").append(" 疑似患者").
+                        append(sp).append("人").append(" 治愈").append(cure).append("人").
+                        append(" 死亡").append(dead).append("人");
             }
             return result.toString();
         }
@@ -335,10 +337,10 @@ class InfectStatistic {
          * 文件处理流程函数
          */
         public void init() {
-            ArrayList<province> result;//省份列表
+            ArrayList<Province> result;//省份列表
             String content = readLog(log_path,date);//读取文件夹下的文件
             result = match(content);//正则表达式匹配
-            HashMap<Integer, province> result_map;
+            HashMap<Integer, Province> result_map;
             result_map = sort(result);//省份排序
             outResult(result_map, province_list, out_path);//输出结果
         }
@@ -356,7 +358,7 @@ class InfectStatistic {
                 assert files != null;
                 Arrays.sort(files);
                 for (File value : files) {
-                    if (value.isFile() && isearlier(value.getName(), date)) {
+                    if (value.isFile() && isearly(value.getName(), date)) {
                         InputStreamReader reader = new InputStreamReader(new FileInputStream(value),
                                 StandardCharsets.UTF_8);
                         BufferedReader br = new BufferedReader(reader);
@@ -381,7 +383,7 @@ class InfectStatistic {
          * @param date      日期
          * @return boolean
          */
-        private boolean isearlier(String file_name, String date) {
+        private boolean isearly(String file_name, String date) {
             date += ".log.txt";
             //如果该文件的日期小于指定日期
             return file_name.compareTo(date) <= 0;
@@ -391,8 +393,8 @@ class InfectStatistic {
          * @param content 日志中的内容
          * @return ArrayList<province>
          */
-        public ArrayList<province> match(String content) {
-            ArrayList<province> result = new ArrayList<>();
+        public ArrayList<Province> match(String content) {
+            ArrayList<Province> result = new ArrayList<>();
             String pattern1 = "(\\S+) 新增 感染患者 (\\d+)人";
             String pattern2 = "(\\S+) 新增 疑似患者 (\\d+)人";
             String pattern3 = "(\\S+) 感染患者 流入 (\\S+) (\\d+)人";
@@ -402,7 +404,8 @@ class InfectStatistic {
             String pattern7 = "(\\S+) 疑似患者 确诊感染 (\\d+)人";
             String pattern8 = "(\\S+) 排除 疑似患者 (\\d+)人";
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
+                BufferedReader br = new BufferedReader(
+                        new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
                 String line = "";
                 line = br.readLine();
                 while ((line = br.readLine()) != null) {
@@ -450,16 +453,16 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void addIp(ArrayList<province> result, Matcher matcher) {
+        private void addIp(ArrayList<Province> result, Matcher matcher) {
             boolean b = false;
-            for (InfectStatistic.province province : result) {
+            for (InfectStatistic.Province province : result) {
                 if (province.getName().equals(matcher.group(1))) {
                     b = true;
                     province.setIp(Integer.parseInt(matcher.group(2)) + province.getIp());
                 }
             }
             if(!b) {//省份不存在
-                province p =new province(matcher.group(1), Integer.parseInt(matcher.group(2)), 0, 0, 0);
+                Province p =new Province(matcher.group(1), Integer.parseInt(matcher.group(2)), 0, 0, 0);
                 result.add(p);
             }
         }
@@ -468,16 +471,16 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void addSp(ArrayList<province> result, Matcher matcher) {
+        private void addSp(ArrayList<Province> result, Matcher matcher) {
             boolean b = false;
-            for (InfectStatistic.province province : result) {
+            for (InfectStatistic.Province province : result) {
                 if (province.getName().equals(matcher.group(1))) {
                     b = true;
                     province.setSp(Integer.parseInt(matcher.group(2)) + province.getSp());
                 }
             }
             if(!b) {//省份不存在
-                province p =new province(matcher.group(1), 0, Integer.parseInt(matcher.group(2)), 0, 0);
+                Province p =new Province(matcher.group(1), 0, Integer.parseInt(matcher.group(2)), 0, 0);
                 result.add(p);
             }
         }
@@ -486,7 +489,7 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void moveIp(ArrayList<province> result, Matcher matcher) {
+        private void moveIp(ArrayList<Province> result, Matcher matcher) {
             int out = -1;//流出省
             int in = -1;//流入省
             for(int i = 0; i < result.size(); i++){
@@ -503,12 +506,15 @@ class InfectStatistic {
             else {
                 //修改流出省的感染患者人数
                 if(in == -1) {//流入省份不存在
-                    province p =new province(matcher.group(2), Integer.parseInt(matcher.group(3)), 0, 0, 0);
+                    Province p =new Province(matcher.group(2),
+                            Integer.parseInt(matcher.group(3)), 0, 0, 0);
                     result.add(p);
                 } else {
-                    result.get(in).setIp(result.get(in).getIp() + Integer.parseInt(matcher.group(3)));//修改流入省的感染患者人数
+                    result.get(in).setIp(result.get(in).getIp() +
+                            Integer.parseInt(matcher.group(3)));//修改流入省的感染患者人数
                 }
-                result.get(out).setIp(result.get(out).getIp() - Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
+                result.get(out).setIp(result.get(out).getIp() -
+                        Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
             }
         }
         /**
@@ -516,7 +522,7 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void moveSp(ArrayList<province> result, Matcher matcher) {
+        private void moveSp(ArrayList<Province> result, Matcher matcher) {
             int out = -1;//流出省
             int in = -1;//流入省
             for(int i = 0; i < result.size(); i++){
@@ -530,14 +536,17 @@ class InfectStatistic {
             if(out == -1) {//流出省份不存在
                 System.out.println("流出省份" + matcher.group(1) + "不存在疑似患者，数据有误");
             } else {
+                //修改流出省的感染患者人数
                 if(in == -1) {//流入省份不存在
-                    province p =new province(matcher.group(2), 0, Integer.parseInt(matcher.group(3)), 0, 0);
+                    Province p =new Province(matcher.group(2), 0,
+                            Integer.parseInt(matcher.group(3)), 0, 0);
                     result.add(p);
-                    result.get(out).setSp(result.get(out).getSp() - Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
                 } else {
-                    result.get(in).setSp(result.get(in).getSp() + Integer.parseInt(matcher.group(3)));//修改流入省的感染患者人数
-                    result.get(out).setSp(result.get(out).getSp() - Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
+                    result.get(in).setSp(result.get(in).getSp() +
+                            Integer.parseInt(matcher.group(3)));//修改流入省的感染患者人数
                 }
+                result.get(out).setSp(result.get(out).getSp() -
+                        Integer.parseInt(matcher.group(3)));//修改流出省的感染患者人数
             }
         }
         /**
@@ -545,9 +554,9 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void addDead(ArrayList<province> result, Matcher matcher) {
+        private void addDead(ArrayList<Province> result, Matcher matcher) {
             boolean b = false;
-            for (InfectStatistic.province province : result) {
+            for (InfectStatistic.Province province : result) {
                 if (province.getName().equals(matcher.group(1))) {
                     b = true;
                     province.setIp(province.getIp() - Integer.parseInt(matcher.group(2)));//修改该省份的感染患者人数
@@ -563,9 +572,9 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void addCure(ArrayList<province> result, Matcher matcher) {
+        private void addCure(ArrayList<Province> result, Matcher matcher) {
             boolean b = false;
-            for (InfectStatistic.province province : result) {
+            for (InfectStatistic.Province province : result) {
                 if (province.getName().equals(matcher.group(1))) {
                     b = true;
                     province.setIp(province.getIp() - Integer.parseInt(matcher.group(2)));//修改该省份的感染患者人数
@@ -581,9 +590,9 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void diagnosisSp(ArrayList<province> result, Matcher matcher) {
+        private void diagnosisSp(ArrayList<Province> result, Matcher matcher) {
             boolean b = false;
-            for (InfectStatistic.province province : result) {
+            for (InfectStatistic.Province province : result) {
                 if (province.getName().equals(matcher.group(1))) {
                     b = true;
                     province.setIp(Integer.parseInt(matcher.group(2)) + province.getIp());//修改该省份的感染患者人数
@@ -599,9 +608,9 @@ class InfectStatistic {
          * @param result  省份集合
          * @param matcher 匹配类型
          */
-        private void excludeSp(ArrayList<province> result, Matcher matcher) {
+        private void excludeSp(ArrayList<Province> result, Matcher matcher) {
             boolean b = false;
-            for (InfectStatistic.province province : result) {
+            for (InfectStatistic.Province province : result) {
                 if (province.getName().equals(matcher.group(1))) {
                     b = true;
                     province.setSp(province.getSp() - Integer.parseInt(matcher.group(2)));//修改该省份的疑似患者人数
@@ -616,18 +625,18 @@ class InfectStatistic {
          * @param result 省份集合
          * @return HashMap<Integer, province>
          */
-        private HashMap<Integer, province> sort(ArrayList<province> result) {
-            HashMap<Integer, province> result_map = new HashMap<>();
+        private HashMap<Integer, Province> sort(ArrayList<Province> result) {
+            HashMap<Integer, Province> result_map = new HashMap<>();
             int country_ip, country_sp, country_cure, country_dead;
             country_ip = country_sp = country_cure = country_dead = 0;
-            for (InfectStatistic.province province : result) {
+            for (InfectStatistic.Province province : result) {
                 country_ip += province.getIp();
                 country_sp += province.getSp();
                 country_cure += province.getCure();
                 country_dead += province.getDead();
                 result_map.put(province.getPosition(), province);
             }
-            province country = new province("全国", country_ip, country_sp, country_cure, country_dead);
+            Province country = new Province("全国", country_ip, country_sp, country_cure, country_dead);
             result_map.put(0, country);
             return result_map;
         }
@@ -637,22 +646,22 @@ class InfectStatistic {
          * @param province_list  要求输出的省份
          * @param out_path       输出的文件路径
          */
-        private void outResult(HashMap<Integer, province> result_map, ArrayList<String> province_list,
+        private void outResult(HashMap<Integer, Province> result_map, ArrayList<String> province_list,
                                String out_path) {
             try {
                 initFile(out_path);
                 FileWriter fw = new FileWriter(out_path, true);
                 BufferedWriter bw = new BufferedWriter(fw);
-                Set<Entry<Integer, province>> entries =result_map.entrySet();
+                Set<Entry<Integer, Province>> entries =result_map.entrySet();
                 if(province_list != null && !province_list.isEmpty()) {//province有参数值
-                    for(Entry<Integer, province> entry:entries){
+                    for(Entry<Integer, Province> entry:entries){
                         if(province_list.contains(province_str[entry.getKey()])) {
                             bw.write(entry.getValue().printResult());
                             bw.write("\n");//换行
                         }
                     }
                 } else {
-                    for(Entry<Integer, province> entry:entries ){
+                    for(Entry<Integer, Province> entry:entries ){
                         bw.write(entry.getValue().printResult());
                         bw.write("\n");//换行
                     }
@@ -692,7 +701,6 @@ class InfectStatistic {
         InfectStatistic.InfectFileManager filemanager= infectStatistic.new InfectFileManager();
         filemanager.init();
     }
-
 }
 
 
