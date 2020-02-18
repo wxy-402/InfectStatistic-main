@@ -339,7 +339,7 @@ class InfectStatistic {
         public void init() {
             ArrayList<Province> result;//省份列表
             String content = readLog(log_path,date);//读取文件夹下的文件
-            result = match(content);//正则表达式匹配
+            result = match(content, province_list);//正则表达式匹配
             HashMap<Integer, Province> result_map;
             result_map = sort(result);//省份排序
             outResult(result_map, province_list, out_path);//输出结果
@@ -391,10 +391,17 @@ class InfectStatistic {
         /**
          * 类型判断
          * @param content 日志中的内容
+         * @param province_list 要求输出的省份
          * @return ArrayList<province>
          */
-        public ArrayList<Province> match(String content) {
+        public ArrayList<Province> match(String content, ArrayList<String> province_list) {
             ArrayList<Province> result = new ArrayList<>();
+            if(province_list != null && !province_list.isEmpty()) {
+                for(String s : province_list) {
+                    Province p =new Province(s, 0, 0, 0, 0);
+                    result.add(p);
+                }
+            }
             String pattern1 = "(\\S+) 新增 感染患者 (\\d+)人";
             String pattern2 = "(\\S+) 新增 疑似患者 (\\d+)人";
             String pattern3 = "(\\S+) 感染患者 流入 (\\S+) (\\d+)人";
@@ -646,8 +653,8 @@ class InfectStatistic {
          * @param province_list  要求输出的省份
          * @param out_path       输出的文件路径
          */
-        private void outResult(HashMap<Integer, Province> result_map, ArrayList<String> province_list,
-                               String out_path) {
+        private void outResult(HashMap<Integer, Province> result_map,
+                               ArrayList<String> province_list, String out_path) {
             try {
                 initFile(out_path);
                 FileWriter fw = new FileWriter(out_path, true);
